@@ -1,0 +1,210 @@
+<header class="page-header">
+  <div>
+    <p class="eyebrow">MANAGEMENT</p>
+    <h1>Licenses</h1>
+    <p class="page-description">Lisans oluştur, geçerlilik durumunu izle ve erişimi yönet.</p>
+  </div>
+
+  <button class="secondary-button" type="button" (click)="loadLicenses()" [disabled]="isLoading()">
+    {{ isLoading() ? 'Yükleniyor…' : 'Yenile' }}
+  </button>
+</header>
+
+<section class="summary-grid" aria-label="Lisans durumu özeti">
+  <article class="summary-card">
+    <span>Toplam</span>
+    <strong>{{ statusSummary().total }}</strong>
+  </article>
+  <article class="summary-card active-card">
+    <span>Aktif</span>
+    <strong>{{ statusSummary().active }}</strong>
+  </article>
+  <article class="summary-card blocked-card">
+    <span>Bloklanan</span>
+    <strong>{{ statusSummary().blocked }}</strong>
+  </article>
+  <article class="summary-card expired-card">
+    <span>Süresi biten</span>
+    <strong>{{ statusSummary().expired }}</strong>
+  </article>
+</section>
+
+<div class="licenses-layout">
+  <section class="panel create-panel" aria-labelledby="create-license-title">
+    <div class="panel-heading">
+      <h2 id="create-license-title">Yeni lisans</h2>
+      <p>Gerçek lisans hakkı ve modülleri belirle.</p>
+    </div>
+
+    <form (submit)="createLicense($event)" novalidate>
+      <label for="license-company">Şirket</label>
+      <select id="license-company" [formControl]="companyIdControl" [disabled]="isReferenceLoading()">
+        <option value="">Şirket seç</option>
+        @for (company of companies(); track company.id) {
+          <option [value]="company.id">{{ company.name }}</option>
+        }
+      </select>
+
+      @if (companyIdControl.invalid && companyIdControl.touched) {
+        <p class="field-error">Şirket seçilmelidir.</p>
+      }
+
+      <label for="license-project">Proje</label>
+      <select id="license-project" [formControl]="projectIdControl" [disabled]="isReferenceLoading()">
+        <option value="">Proje seç</option>
+        @for (project of projects(); track project.id) {
+          <option [value]="project.id">{{ project.name }} · {{ project.version }}</option>
+        }
+      </select>
+
+      @if (projectIdControl.invalid && projectIdControl.touched) {
+        <p class="field-error">Proje seçilmelidir.</p>
+      }
+
+      <label for="license-modules">Modüller</label>
+      <input
+        id="license-modules"
+        type="text"
+        autocomplete="off"
+        placeholder="Reports, Inventory"
+        [formControl]="modulesControl"
+      />
+      <p class="field-help">Birden fazla modülü virgülle ayır.</p>
+
+      @if (modulesControl.invalid && modulesControl.touched) {
+        <p class="field-error">En az bir modül gereklidir.</p>
+      }
+
+      <label for="license-valid-until">Gerçek geçerlilik sonu</label>
+      <input
+        id="license-valid-until"
+        type="datetime-local"
+        [formControl]="validUntilControl"
+      />
+
+      @if (validUntilControl.invalid && validUntilControl.touched) {
+        <p class="field-error">Gelecekte bir geçerlilik tarihi seçilmelidir.</p>
+      }
+
+      @if (referenceError()) {
+        <p class="message error-message" role="alert">{{ referenceError() }}</p>
+      }
+
+      @if (formError()) {
+        <p class="message error-message" role="alert">{{ formError() }}</p>
+      }
+
+      <button
+        class="primary-button"
+        type="submit"
+        [disabled]="isSubmitting() || isReferenceLoading() || !!referenceError()"
+      >
+        {{ isSubmitting() ? 'Oluşturuluyor…' : 'Lisans oluştur' }}
+      </button>
+    </form>
+
+    @if (createdLicense(); as license) {
+      <div class="created-license" role="status">
+        <div class="created-heading">
+          <strong>Lisans oluşturuldu</strong>
+          <button type="button" (click)="closeCreatedLicense()" aria-label="Kapat">×</button>
+        </div>
+        <p>Bu anahtarı güvenli biçimde müşteriye aktar.</p>
+        <code>{{ license.license_key }}</code>
+        <button class="copy-button" type="button" (click)="copyCreatedLicenseKey()">Anahtarı kopyala</button>
+        @if (copyMessage()) {
+          <span class="copy-message">{{ copyMessage() }}</span>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="panel list-panel" aria-labelledby="license-list-title">
+    <div class="panel-heading list-heading">
+      <div>
+        <h2 id="license-list-title">Lisans listesi</h2>
+        <p>{{ filteredLicenses().length }} / {{ licenses().length }} kayıt</p>
+      </div>
+
+      <div class="filters">
+        <input type="search" placeholder="Şirket, proje veya key ara" [formControl]="searchControl" />
+        <select aria-label="Duruma göre filtrele" [formControl]="statusControl">
+          <option value="all">Tüm durumlar</option>
+          <option value="active">Aktif</option>
+          <option value="blocked">Bloklanan</option>
+          <option value="expired">Süresi biten</option>
+        </select>
+      </div>
+    </div>
+
+    @if (actionMessage()) {
+      <p class="action-message" role="status">{{ actionMessage() }}</p>
+    }
+
+    @if (isLoading() && licenses().length === 0) {
+      <div class="state-message" aria-live="polite">Lisanslar yükleniyor…</div>
+    } @else if (loadError()) {
+      <div class="state-message error-state" role="alert">
+        <p>{{ loadError() }}</p>
+        <button class="secondary-button" type="button" (click)="loadLicenses()">Tekrar dene</button>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Şirket / Proje</th>
+              <th>Lisans anahtarı</th>
+              <th>Modüller</th>
+              <th>Signed bitiş</th>
+              <th>Gerçek bitiş</th>
+              <th>Durum</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (license of filteredLicenses(); track license.id) {
+              <tr>
+                <td>
+                  <strong>{{ license.company_name }}</strong>
+                  <span>{{ license.project_name }} · {{ license.project_version }}</span>
+                </td>
+                <td class="license-key">{{ maskLicenseKey(license.license_key) }}</td>
+                <td>
+                  <div class="module-list">
+                    @for (module of license.modules; track module) {
+                      <span>{{ module }}</span>
+                    }
+                  </div>
+                </td>
+                <td>{{ license.expiry_date | date: 'dd.MM.yyyy' }}</td>
+                <td>{{ license.valid_until | date: 'dd.MM.yyyy' }}</td>
+                <td>
+                  <span [class]="licenseStatusClass(license)">{{ licenseStatusLabel(license) }}</span>
+                </td>
+                <td class="action-cell">
+                  <button
+                    type="button"
+                    [class]="license.is_blocked ? 'unblock-button' : 'block-button'"
+                    (click)="changeBlockedStatus(license)"
+                    [disabled]="changingLicenseId() !== null"
+                  >
+                    @if (changingLicenseId() === license.id) {
+                      İşleniyor…
+                    } @else {
+                      {{ license.is_blocked ? 'Engeli kaldır' : 'Blokla' }}
+                    }
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td class="empty-row" colspan="7">Filtreye uygun lisans bulunamadı.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

@@ -1,0 +1,115 @@
+<header class="page-header">
+  <div>
+    <p class="eyebrow">OVERVIEW</p>
+    <h1>Dashboard</h1>
+    @if (dashboard()) {
+      <p class="generated-at">
+        Son güncelleme: {{ dashboard()!.generated_at | date: 'dd.MM.yyyy HH:mm' }}
+      </p>
+    }
+  </div>
+
+  <button type="button" (click)="loadDashboard()" [disabled]="isLoading()">
+    {{ isLoading() ? 'Yükleniyor…' : 'Yenile' }}
+  </button>
+</header>
+
+@if (isLoading() && !dashboard()) {
+  <section class="state-card" aria-live="polite">Dashboard verileri yükleniyor…</section>
+} @else if (errorMessage()) {
+  <section class="state-card error-state" role="alert">
+    <p>{{ errorMessage() }}</p>
+    <button type="button" (click)="loadDashboard()">Tekrar dene</button>
+  </section>
+} @else if (dashboard(); as data) {
+  <section class="summary-grid" aria-label="Lisans özeti">
+    @for (card of summaryCards(); track card.label) {
+      <article class="summary-card" [class]="card.tone">
+        <span>{{ card.label }}</span>
+        <strong>{{ card.value }}</strong>
+      </article>
+    }
+  </section>
+
+  <div class="table-grid">
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Son oluşturulan lisanslar</h2>
+          <p>En yeni 5 kayıt</p>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Şirket / Proje</th>
+              <th>Lisans anahtarı</th>
+              <th>Gerçek bitiş</th>
+              <th>Durum</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (license of data.recent_licenses; track license.id) {
+              <tr>
+                <td>
+                  <strong>{{ license.company_name }}</strong>
+                  <span>{{ license.project_name }} · {{ license.project_version }}</span>
+                </td>
+                <td class="license-key">{{ maskLicenseKey(license.license_key) }}</td>
+                <td>{{ license.valid_until | date: 'dd.MM.yyyy' }}</td>
+                <td>
+                  <span [class]="licenseStatusClass(license)">
+                    {{ licenseStatus(license) }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="empty-row">Henüz lisans kaydı yok.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Yaklaşan gerçek bitişler</h2>
+          <p>Geçerlilik süresi en yakın 5 lisans</p>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Şirket / Proje</th>
+              <th>Bitiş tarihi</th>
+              <th>Kalan</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (license of data.expiring_licenses; track license.id) {
+              <tr>
+                <td>
+                  <strong>{{ license.company_name }}</strong>
+                  <span>{{ license.project_name }} · {{ license.project_version }}</span>
+                </td>
+                <td>{{ license.valid_until | date: 'dd.MM.yyyy' }}</td>
+                <td><span class="days-remaining">{{ license.days_remaining }} gün</span></td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3" class="empty-row">Yaklaşan lisans bitişi yok.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+}

@@ -1,0 +1,26 @@
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">LM</span>
+      <div>
+        <strong>License Manager</strong>
+        <span>Admin Panel</span>
+      </div>
+    </div>
+
+    <nav aria-label="Ana menü">
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/companies" routerLinkActive="active">Companies</a>
+      <a routerLink="/projects" routerLinkActive="active">Projects / Key Rotation</a>
+      <a routerLink="/licenses" routerLinkActive="active">Licenses</a>
+    </nav>
+
+    <button class="logout-button" type="button" (click)="logout()">
+      Oturumu kapat
+    </button>
+  </aside>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="LicenseManager.Api/LicenseManager.Api.csproj" />
+  <Project Path="LicenseManager.Client/LicenseManager.Client.csproj" />
+  <Project Path="LicenseManager.Core/LicenseManager.Core.csproj" />
+  <Project Path="LicenseManager.Tests/LicenseManager.Tests.csproj" />
+</Solution>

@@ -1,0 +1,191 @@
+<header class="page-header">
+  <div>
+    <p class="eyebrow">MANAGEMENT</p>
+    <h1>Projects / Key Rotation</h1>
+    <p class="page-description">Projeleri ve signing key yaşam döngüsünü yönet.</p>
+  </div>
+
+  <button class="secondary-button" type="button" (click)="loadProjects()" [disabled]="isLoading()">
+    {{ isLoading() ? 'Yükleniyor…' : 'Yenile' }}
+  </button>
+</header>
+
+<div class="projects-layout">
+  <section class="panel create-panel" aria-labelledby="create-project-title">
+    <div class="panel-heading">
+      <h2 id="create-project-title">Yeni proje</h2>
+      <p>İlk signing key otomatik oluşturulur.</p>
+    </div>
+
+    <form (submit)="createProject($event)" novalidate>
+      <label for="project-name">Proje adı</label>
+      <input
+        id="project-name"
+        type="text"
+        maxlength="200"
+        autocomplete="off"
+        placeholder="Örn. Giltas ERP"
+        [formControl]="projectNameControl"
+      />
+
+      @if (projectNameControl.invalid && projectNameControl.touched) {
+        <p class="field-error">Proje adı gereklidir.</p>
+      }
+
+      <label class="version-label" for="project-version">Sürüm</label>
+      <input
+        id="project-version"
+        type="text"
+        maxlength="50"
+        autocomplete="off"
+        placeholder="Örn. 1.0"
+        [formControl]="projectVersionControl"
+      />
+
+      @if (projectVersionControl.invalid && projectVersionControl.touched) {
+        <p class="field-error">Proje sürümü gereklidir.</p>
+      }
+
+      @if (formError()) {
+        <p class="message error-message" role="alert">{{ formError() }}</p>
+      }
+
+      @if (formSuccess()) {
+        <p class="message success-message" role="status">{{ formSuccess() }}</p>
+      }
+
+      <button class="primary-button" type="submit" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Oluşturuluyor…' : 'Proje oluştur' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="panel list-panel" aria-labelledby="project-list-title">
+    <div class="panel-heading">
+      <h2 id="project-list-title">Proje listesi</h2>
+      <p>{{ projects().length }} proje</p>
+    </div>
+
+    @if (isLoading() && projects().length === 0) {
+      <div class="state-message" aria-live="polite">Projeler yükleniyor…</div>
+    } @else if (loadError()) {
+      <div class="state-message error-state" role="alert">
+        <p>{{ loadError() }}</p>
+        <button class="secondary-button" type="button" (click)="loadProjects()">Tekrar dene</button>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Proje</th>
+              <th>Aktif key</th>
+              <th>Lisans / Key</th>
+              <th>Oluşturulma</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (project of projects(); track project.id) {
+              <tr [class.selected-row]="selectedProjectId() === project.id">
+                <td>
+                  <strong>{{ project.name }}</strong>
+                  <span>{{ project.version }}</span>
+                </td>
+                <td><span class="key-version">v{{ project.key_version }}</span></td>
+                <td>{{ project.license_count }} lisans · {{ project.key_count }} key</td>
+                <td>{{ project.created_at | date: 'dd.MM.yyyy HH:mm' }}</td>
+                <td class="action-cell">
+                  <button class="secondary-button compact" type="button" (click)="manageKeys(project)">
+                    Key yönet
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td class="empty-row" colspan="5">Henüz proje kaydı yok.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+@if (selectedProject(); as project) {
+  <section class="panel rotation-panel" aria-labelledby="rotation-title">
+    <div class="rotation-heading">
+      <div>
+        <p class="eyebrow">SIGNING KEYS</p>
+        <h2 id="rotation-title">{{ project.name }} · {{ project.version }}</h2>
+        <p>Önce yeni anahtarı hazırla, istemcileri public key ile güncelle, sonra aktive et.</p>
+      </div>
+
+      <button
+        class="primary-button prepare-button"
+        type="button"
+        (click)="prepareKeyRotation()"
+        [disabled]="rotationInProgress() || activatingKeyVersion() !== null"
+      >
+        {{ rotationInProgress() ? 'Hazırlanıyor…' : 'Yeni key hazırla' }}
+      </button>
+    </div>
+
+    @if (rotationError()) {
+      <p class="message error-message rotation-message" role="alert">{{ rotationError() }}</p>
+    }
+
+    @if (rotationSuccess()) {
+      <p class="message success-message rotation-message" role="status">{{ rotationSuccess() }}</p>
+    }
+
+    @if (isKeysLoading()) {
+      <div class="state-message" aria-live="polite">Signing key’ler yükleniyor…</div>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Public key</th>
+              <th>Oluşturulma</th>
+              <th>Durum</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (key of projectKeys(); track key.id) {
+              <tr>
+                <td><strong>Key v{{ key.key_version }}</strong></td>
+                <td class="public-key" [title]="key.public_key">{{ maskPublicKey(key.public_key) }}</td>
+                <td>{{ key.created_at | date: 'dd.MM.yyyy HH:mm' }}</td>
+                <td>
+                  <span class="key-status" [class.active]="key.is_active">
+                    {{ key.is_active ? 'Aktif' : 'Hazır' }}
+                  </span>
+                </td>
+                <td class="action-cell">
+                  @if (!key.is_active) {
+                    <button
+                      class="activate-button"
+                      type="button"
+                      (click)="activateKey(key)"
+                      [disabled]="activatingKeyVersion() !== null || rotationInProgress()"
+                    >
+                      {{ activatingKeyVersion() === key.key_version ? 'Aktif ediliyor…' : 'Aktif et' }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td class="empty-row" colspan="5">Bu proje için signing key bulunamadı.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

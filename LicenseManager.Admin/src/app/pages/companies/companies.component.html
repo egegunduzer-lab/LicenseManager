@@ -1,0 +1,99 @@
+<header class="page-header">
+  <div>
+    <p class="eyebrow">MANAGEMENT</p>
+    <h1>Companies</h1>
+    <p class="page-description">Lisans sahibi şirketleri görüntüle ve yeni şirket oluştur.</p>
+  </div>
+
+  <button class="secondary-button" type="button" (click)="loadCompanies()" [disabled]="isLoading()">
+    {{ isLoading() ? 'Yükleniyor…' : 'Yenile' }}
+  </button>
+</header>
+
+<div class="companies-layout">
+  <section class="panel create-panel" aria-labelledby="create-company-title">
+    <div class="panel-heading">
+      <h2 id="create-company-title">Yeni şirket</h2>
+      <p>Şirket adı benzersiz olmalıdır.</p>
+    </div>
+
+    <form (submit)="createCompany($event)" novalidate>
+      <label for="company-name">Şirket adı</label>
+      <input
+        id="company-name"
+        type="text"
+        maxlength="200"
+        autocomplete="organization"
+        placeholder="Örn. ABC Holding"
+        [formControl]="companyNameControl"
+        [attr.aria-invalid]="companyNameControl.invalid && companyNameControl.touched"
+      />
+
+      @if (companyNameControl.invalid && companyNameControl.touched) {
+        <p class="field-error">Şirket adı gereklidir.</p>
+      }
+
+      @if (formError()) {
+        <p class="message error-message" role="alert">{{ formError() }}</p>
+      }
+
+      @if (successMessage()) {
+        <p class="message success-message" role="status">{{ successMessage() }}</p>
+      }
+
+      <button class="primary-button" type="submit" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Oluşturuluyor…' : 'Şirket oluştur' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="panel list-panel" aria-labelledby="company-list-title">
+    <div class="panel-heading list-heading">
+      <div>
+        <h2 id="company-list-title">Şirket listesi</h2>
+        <p>{{ companies().length }} şirket</p>
+      </div>
+    </div>
+
+    @if (isLoading() && companies().length === 0) {
+      <div class="state-message" aria-live="polite">Şirketler yükleniyor…</div>
+    } @else if (loadError()) {
+      <div class="state-message error-state" role="alert">
+        <p>{{ loadError() }}</p>
+        <button class="secondary-button" type="button" (click)="loadCompanies()">
+          Tekrar dene
+        </button>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Şirket</th>
+              <th>Lisans sayısı</th>
+              <th>Oluşturulma</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (company of companies(); track company.id) {
+              <tr>
+                <td>
+                  <strong>{{ company.name }}</strong>
+                  <span class="company-id">{{ company.id }}</span>
+                </td>
+                <td>
+                  <span class="license-count">{{ company.license_count }}</span>
+                </td>
+                <td>{{ company.created_at | date: 'dd.MM.yyyy HH:mm' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td class="empty-row" colspan="3">Henüz şirket kaydı yok.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

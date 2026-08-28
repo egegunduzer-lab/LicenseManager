@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Yeni Profil",
+    "Projects": [
+      {
+        "Path": "LicenseManager.Api\\LicenseManager.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "LicenseManager.Client\\LicenseManager.Client.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

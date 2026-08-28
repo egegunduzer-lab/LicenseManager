@@ -1,0 +1,38 @@
+<main class="login-page">
+  <section class="login-card" aria-labelledby="login-title">
+    <div class="brand-mark">LM</div>
+    <p class="eyebrow">LICENSE MANAGER</p>
+    <h1 id="login-title">Yönetici girişi</h1>
+    <p class="description">
+      Yönetim API’sine bağlanmak için admin anahtarını gir.
+    </p>
+
+    <form (submit)="submit($event)" novalidate>
+      <label for="admin-api-key">Admin API key</label>
+      <input
+        id="admin-api-key"
+        type="password"
+        autocomplete="off"
+        spellcheck="false"
+        [formControl]="apiKeyControl"
+        [attr.aria-invalid]="apiKeyControl.invalid && apiKeyControl.touched"
+      />
+
+      @if (apiKeyControl.invalid && apiKeyControl.touched) {
+        <p class="field-error">Admin API key zorunludur.</p>
+      }
+
+      @if (errorMessage()) {
+        <p class="request-error" role="alert">{{ errorMessage() }}</p>
+      }
+
+      <button type="submit" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Kontrol ediliyor…' : 'Panele gir' }}
+      </button>
+    </form>
+
+    <p class="security-note">
+      Anahtar yalnızca bu sekmenin belleğinde tutulur ve sayfa yenilendiğinde silinir.
+    </p>
+  </section>
+</main>
